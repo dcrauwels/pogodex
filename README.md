@@ -1,0 +1,2 @@
+# pogodex
+Pokédex in Golang
