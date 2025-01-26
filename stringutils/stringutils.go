@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-func cleanInput(text string) []string {
+func CleanInput(text string) []string {
 	lc := strings.ToLower(text)
 	trLc := strings.TrimSpace(lc)
 	return strings.Fields(trLc)

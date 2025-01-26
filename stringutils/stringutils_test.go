@@ -27,17 +27,17 @@ func TestCleanInput(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		actual := cleanInput(c.input)
+		actual := CleanInput(c.input)
 		l := len(actual)
 		e := len(c.expected)
 		if l != e {
-			t.Errorf("cleanInput() slice length (%d) does not match expected length (%d)", l, e)
+			t.Errorf("CleanInput() slice length (%d) does not match expected length (%d)", l, e)
 		}
 		for i := range actual {
 			word := actual[i]
 			expectedWord := c.expected[i]
 			if word != expectedWord {
-				t.Errorf("cleanInput() result %d (%s) does not match expected output (%s)", i, word, expectedWord)
+				t.Errorf("CleanInput() result %d (%s) does not match expected output (%s)", i, word, expectedWord)
 			}
 		}
 	}
