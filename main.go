@@ -1,10 +1,9 @@
 package main
 
 import (
-	"fmt"
-	//"github.com/dcrauwels/pogodex/stringutils"
+	"github.com/dcrauwels/pogodex/replcli"
 )
 
 func main() {
-	fmt.Printf("Hello, World!")
+	replcli.ReplCLI()
 }

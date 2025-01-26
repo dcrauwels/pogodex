@@ -1,2 +1,3 @@
 # pogodex
-Pokédex in Golang
+*Practice project.*
+Implementation of a Pokédex CLI in Golang.
