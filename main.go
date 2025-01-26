@@ -1,13 +1,10 @@
 package main
 
 import (
-    "fmt"
-    "pogodex/stringutils"
+	"fmt"
+	//"github.com/dcrauwels/pogodex/stringutils"
 )
 
-
 func main() {
-    fmt.Printf("Hello, World!")
+	fmt.Printf("Hello, World!")
 }
-
-    
