@@ -57,7 +57,7 @@ func (r *REPL) commandHelp() error {
 
 	// loop over all commands
 	for _, command := range r.commands {
-		fmt.Printf("%s: %s\n", command.name, command.description)
+		fmt.Printf(" %s: %s\n", command.name, command.description)
 	}
 	return nil
 }
@@ -76,21 +76,26 @@ func (r *REPL) ReplCLI() error {
 		// take input and clean it
 		s.Scan()
 		input := s.Text()
+		if ok := len(input) > 0; !ok {
+			//fmt.Println("Please enter a command")
+			continue
+		}
 		cleanedInput := stringutils.CleanInput(input)
 		firstInput := cleanedInput[0]
 
 		//check if command in r.commands
 		command, ok := r.commands[firstInput]
 		if !ok {
-			fmt.Errorf("Unknown command: %s", firstInput)
+			fmt.Printf("Unknown command: %s\n", firstInput)
+			continue
 		}
 
 		// try command, raise error if an issue arises
 		if err := command.callback(); err != nil {
-			fmt.Errorf("Error executing command: %w", err)
+			fmt.Printf("Error executing command: %v\n", err)
+			continue
 		}
 
-		command.callback()
 		fmt.Printf("Your command was: %s\n", firstInput)
 	}
 }
