@@ -5,5 +5,6 @@ import (
 )
 
 func main() {
-	replcli.ReplCLI()
+	r := replcli.NewREPL()
+	r.ReplCLI()
 }
