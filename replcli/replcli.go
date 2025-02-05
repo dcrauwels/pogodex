@@ -2,12 +2,10 @@ package replcli
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 
+	"github.com/dcrauwels/pogodex/pokeapi"
 	"github.com/dcrauwels/pogodex/stringutils"
 )
 
@@ -71,7 +69,6 @@ func (r *REPL) commandHelp() error {
 
 // third command: print area names on the 'map'
 func (r *REPL) commandMap() error {
-	//sanity check
 
 	// construct URL
 	var u string
@@ -81,35 +78,35 @@ func (r *REPL) commandMap() error {
 		u = "https://pokeapi.co/api/v2/location-area/"
 	}
 
-	// GET request
-	res, err := http.Get(u)
+	locations, err := pokeapi.GetLocations(u)
 	if err != nil {
-		return fmt.Errorf("error getting request: %w", err)
-	}
-	defer res.Body.Close()
-
-	// parse response
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return fmt.Errorf("error parsing response: %w", err)
+		return fmt.Errorf("error getting locations from pokeAPI: %w", err)
 	}
 
-	// unmarshal JSON to struct
-	// type locationArea
-	type locationArea struct {
-		Name string
-		Url  string
+	// update r.nextURL, r.previousURL
+	if locations.Previous != nil {
+		previousValue := *locations.Previous
+		r.previousURL = previousValue
 	}
-	// type pokeapiResponse
-	type pokeapiResponse struct {
-		Count    int
-		Next     string
-		Previous *string
-		Results  []locationArea
+	r.nextURL = locations.Next
+
+	// print locations
+	for _, location := range locations.Results {
+		fmt.Println(location.Name)
 	}
-	var locations pokeapiResponse
-	if err = json.Unmarshal(body, &locations); err != nil {
-		return fmt.Errorf("error unmarshalling data: %w", err)
+
+	return nil
+}
+
+func (r *REPL) commandBmap() error {
+	// construct URL and sanity check
+	if r.previousURL == "" || r.nextURL == "https://pokeapi.co/api/v2/location-area/?offset=20&limit=20" {
+		fmt.Println("You're on the first page of location results")
+		return nil
+	}
+	locations, err := pokeapi.GetLocations(r.previousURL)
+	if err != nil {
+		return fmt.Errorf("error getting locations from pokeAPI: %w", err)
 	}
 
 	// update r.nextURL, r.previousURL
@@ -133,6 +130,7 @@ func (r *REPL) ReplCLI() error {
 	r.RegisterCommand("exit", "Exit the Pokedex", r.commandExit)
 	r.RegisterCommand("help", "Prints this help message", r.commandHelp)
 	r.RegisterCommand("map", "View map locations", r.commandMap)
+	r.RegisterCommand("bmap", "View previous map locations", r.commandBmap)
 
 	s := bufio.NewScanner(os.Stdin)
 
