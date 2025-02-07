@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/dcrauwels/pogodex/internal/pokeapi"
+	"github.com/dcrauwels/pogodex/internal/pokecache"
 	"github.com/dcrauwels/pogodex/internal/stringutils"
 )
 
@@ -21,13 +22,16 @@ type REPL struct {
 	commands    map[string]cliCommand
 	nextURL     string // store what URL we are at when using commandMap
 	previousURL string // see above
+	cache       *pokecache.Cache
 }
 
-func NewREPL() *REPL {
+func NewREPL(interval int) *REPL {
+
 	return &REPL{
 		commands:    make(map[string]cliCommand),
 		nextURL:     "",
 		previousURL: "",
+		cache:       pokecache.NewCache(interval),
 	}
 }
 
@@ -78,7 +82,7 @@ func (r *REPL) commandMap() error {
 		u = "https://pokeapi.co/api/v2/location-area/"
 	}
 
-	locations, err := pokeapi.GetLocations(u)
+	locations, err := pokeapi.GetLocations(u, r.cache)
 	if err != nil {
 		return fmt.Errorf("error getting locations from pokeAPI: %w", err)
 	}
@@ -104,7 +108,7 @@ func (r *REPL) commandMapb() error {
 		fmt.Println("You're on the first page of location results")
 		return nil
 	}
-	locations, err := pokeapi.GetLocations(r.previousURL)
+	locations, err := pokeapi.GetLocations(r.previousURL, r.cache)
 	if err != nil {
 		return fmt.Errorf("error getting locations from pokeAPI: %w", err)
 	}
@@ -132,6 +136,7 @@ func (r *REPL) ReplCLI() error {
 	r.RegisterCommand("map", "View map locations", r.commandMap)
 	r.RegisterCommand("mapb", "View previous map locations", r.commandMapb)
 
+	// initialize scanner
 	s := bufio.NewScanner(os.Stdin)
 
 	for {
