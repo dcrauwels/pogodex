@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dcrauwels/pogodex/pokeapi"
-	"github.com/dcrauwels/pogodex/stringutils"
+	"github.com/dcrauwels/pogodex/internal/pokeapi"
+	"github.com/dcrauwels/pogodex/internal/stringutils"
 )
 
 // define struct for commands
