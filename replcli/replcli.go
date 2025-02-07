@@ -98,7 +98,7 @@ func (r *REPL) commandMap() error {
 	return nil
 }
 
-func (r *REPL) commandBmap() error {
+func (r *REPL) commandMapb() error {
 	// construct URL and sanity check
 	if r.previousURL == "" || r.nextURL == "https://pokeapi.co/api/v2/location-area/?offset=20&limit=20" {
 		fmt.Println("You're on the first page of location results")
@@ -130,7 +130,7 @@ func (r *REPL) ReplCLI() error {
 	r.RegisterCommand("exit", "Exit the Pokedex", r.commandExit)
 	r.RegisterCommand("help", "Prints this help message", r.commandHelp)
 	r.RegisterCommand("map", "View map locations", r.commandMap)
-	r.RegisterCommand("bmap", "View previous map locations", r.commandBmap)
+	r.RegisterCommand("mapb", "View previous map locations", r.commandMapb)
 
 	s := bufio.NewScanner(os.Stdin)
 
