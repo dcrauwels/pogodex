@@ -20,8 +20,13 @@ type cliCommand struct {
 }
 
 type Pokemon struct {
-	name string
-	id   int
+	name   string
+	id     int
+	height int
+	weight int
+	stats  map[string]int
+
+	types []string
 }
 
 // define struct for REPL and associated function
@@ -183,7 +188,6 @@ func (r *REPL) commandCatch(argument ...string) error {
 	fmt.Printf("Throwing a Pokeball at %s...\n", a)
 
 	//construct url
-
 	url := "https://pokeapi.co/api/v2/pokemon/" + a
 
 	// get data via pokeapi package
@@ -193,16 +197,37 @@ func (r *REPL) commandCatch(argument ...string) error {
 	}
 
 	// calculate catch result
-	catchRand := rand.Intn(750) // assuming no pokemon will have a higher base experience than 750 ... not sure if correct
+	maxExp := 750 // Found a forum post from 2015 or so saying Blissey is highest baseexp at 600 or so ... not sure if correct
+	catchRand := rand.Intn(750)
 	baseExp := pokemon.BaseExperience
+	if baseExp > maxExp {
+		return fmt.Errorf("higher exp than assumed maximum %d found", maxExp)
+	}
 
 	// print catch result
 	if catchRand >= baseExp {
 		fmt.Printf("%s was caught!\n", a)
+
+		// extract stats to dict
+		extractedStats := make(map[string]int)
+		for _, s := range pokemon.Stats {
+			extractedStats[s.Stat.Name] = s.BaseStat
+		}
+
+		// extract types to slice
+		extractedTypes := make([]string, 0, len(pokemon.Types))
+		for _, t := range pokemon.Types {
+			extractedTypes = append(extractedTypes, t.Type.Name)
+		}
+
 		// and add to pokedex
 		r.pokemon[a] = Pokemon{
-			name: pokemon.Name,
-			id:   pokemon.ID,
+			name:   pokemon.Name,
+			id:     pokemon.ID,
+			height: pokemon.Height,
+			weight: pokemon.Weight,
+			stats:  extractedStats,
+			types:  extractedTypes,
 		}
 	} else {
 		fmt.Printf("%s escaped!\n", a)
