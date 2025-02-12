@@ -20,13 +20,13 @@ type cliCommand struct {
 }
 
 type Pokemon struct {
-	name   string
-	id     int
-	height int
-	weight int
-	stats  map[string]int
+	Name   string
+	ID     int
+	Height int
+	Weight int
+	Stats  map[string]int
 
-	types []string
+	Types []string
 }
 
 // define struct for REPL and associated function
@@ -222,17 +222,48 @@ func (r *REPL) commandCatch(argument ...string) error {
 
 		// and add to pokedex
 		r.pokemon[a] = Pokemon{
-			name:   pokemon.Name,
-			id:     pokemon.ID,
-			height: pokemon.Height,
-			weight: pokemon.Weight,
-			stats:  extractedStats,
-			types:  extractedTypes,
+			Name:   pokemon.Name,
+			ID:     pokemon.ID,
+			Height: pokemon.Height,
+			Weight: pokemon.Weight,
+			Stats:  extractedStats,
+			Types:  extractedTypes,
 		}
 	} else {
 		fmt.Printf("%s escaped!\n", a)
 	}
 
+	return nil
+}
+
+// seventh command: list stats from a caught pokemon
+func (r *REPL) commandInspect(argument ...string) error {
+	// sanity check
+	if len(argument) == 0 {
+		return fmt.Errorf("no arguments passed")
+	}
+
+	// just take first argument
+	a := argument[0]
+
+	details, ok := r.pokemon[a]
+	if !ok {
+		return fmt.Errorf("%s has not yet been caught", a)
+	}
+
+	// print stats (might be a *slightly* better way of doing this?? :<)
+	fmt.Printf("Name: %s\n", details.Name)
+	fmt.Printf("ID: %d\n", details.ID)
+	fmt.Printf("Height: %d\n", details.Height)
+	fmt.Printf("Weight: %d\n", details.Weight)
+	fmt.Printf("Stats: \n")
+	for statName, statValue := range details.Stats {
+		fmt.Printf(" -%s: %d\n", statName, statValue)
+	}
+	fmt.Printf("Types: \n")
+	for _, t := range details.Types {
+		fmt.Printf(" - %s\n", t)
+	}
 	return nil
 }
 
@@ -245,6 +276,7 @@ func (r *REPL) ReplCLI() {
 	r.RegisterCommand("mapb", "View previous map locations", r.commandMapb, "none")
 	r.RegisterCommand("explore", "View list of wild Pokemon on a given map location", r.commandExplore, "<area-name>")
 	r.RegisterCommand("catch", "Attempt to catch a Pokemon", r.commandCatch, "<pokemon-name>")
+	r.RegisterCommand("inspect", "View a caught Pokemon's details", r.commandInspect, "<pokemon-name>")
 
 	// initialize scanner
 	s := bufio.NewScanner(os.Stdin)
