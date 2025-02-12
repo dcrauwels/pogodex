@@ -3,6 +3,7 @@ package replcli
 import (
 	"bufio"
 	"fmt"
+	"math/rand"
 	"os"
 
 	"github.com/dcrauwels/pogodex/internal/pokeapi"
@@ -18,12 +19,18 @@ type cliCommand struct {
 	argument    string // currently just the single string, but maybe a slice is better?
 }
 
+type Pokemon struct {
+	name string
+	id   int
+}
+
 // define struct for REPL and associated function
 type REPL struct {
 	commands    map[string]cliCommand
 	nextURL     string // store what URL we are at when using commandMap
 	previousURL string // see above
 	cache       *pokecache.Cache
+	pokemon     map[string]Pokemon
 }
 
 func NewREPL(interval int) *REPL {
@@ -33,6 +40,7 @@ func NewREPL(interval int) *REPL {
 		nextURL:     "",
 		previousURL: "",
 		cache:       pokecache.NewCache(interval),
+		pokemon:     make(map[string]Pokemon),
 	}
 }
 
@@ -104,6 +112,7 @@ func (r *REPL) commandMap(argument ...string) error {
 	return nil
 }
 
+// fourth command: reverse the map
 func (r *REPL) commandMapb(argument ...string) error {
 	// construct URL and sanity check
 	if r.previousURL == "" || r.nextURL == "https://pokeapi.co/api/v2/location-area/?offset=20&limit=20" {
@@ -130,6 +139,7 @@ func (r *REPL) commandMapb(argument ...string) error {
 	return nil
 }
 
+// fifth command: list pokemon in a given location-area
 func (r *REPL) commandExplore(argument ...string) error {
 	// sanity check
 	if len(argument) == 0 {
@@ -159,6 +169,48 @@ func (r *REPL) commandExplore(argument ...string) error {
 	return nil
 }
 
+// sixth command: attempt to catch a given pokemon
+func (r *REPL) commandCatch(argument ...string) error {
+	// sanity check
+	if len(argument) == 0 {
+		return fmt.Errorf("no arguments passed")
+	}
+
+	// just take first argument
+	a := argument[0]
+
+	//print opening message
+	fmt.Printf("Throwing a Pokeball at %s...\n", a)
+
+	//construct url
+
+	url := "https://pokeapi.co/api/v2/pokemon/" + a
+
+	// get data via pokeapi package
+	pokemon, err := pokeapi.GetPokemon(url, r.cache)
+	if err != nil {
+		return fmt.Errorf("error getting Pokemon from PokeAPI: %w", err)
+	}
+
+	// calculate catch result
+	catchRand := rand.Intn(750) // assuming no pokemon will have a higher base experience than 750 ... not sure if correct
+	baseExp := pokemon.BaseExperience
+
+	// print catch result
+	if catchRand >= baseExp {
+		fmt.Printf("%s was caught!\n", a)
+		// and add to pokedex
+		r.pokemon[a] = Pokemon{
+			name: pokemon.Name,
+			id:   pokemon.ID,
+		}
+	} else {
+		fmt.Printf("%s escaped!\n", a)
+	}
+
+	return nil
+}
+
 // main function: open a CLI that loops until interrupt or commandExit() is called
 func (r *REPL) ReplCLI() {
 	// register commands here
@@ -167,6 +219,7 @@ func (r *REPL) ReplCLI() {
 	r.RegisterCommand("map", "View map locations", r.commandMap, "none")
 	r.RegisterCommand("mapb", "View previous map locations", r.commandMapb, "none")
 	r.RegisterCommand("explore", "View list of wild Pokemon on a given map location", r.commandExplore, "<area-name>")
+	r.RegisterCommand("catch", "Attempt to catch a Pokemon", r.commandCatch, "<pokemon-name>")
 
 	// initialize scanner
 	s := bufio.NewScanner(os.Stdin)

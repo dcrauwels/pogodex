@@ -11,10 +11,10 @@ import (
 
 // marker interface
 type APIResponse interface {
-	locationAreaResponse | locationAreaEncounters // Type constraint.
+	locationAreaResponse | locationAreaEncounters | pokemonResponse // Type constraint.
 }
 
-// type pokeapiResponse
+// type locationAreaResponse: used in commandMap and commandMapb
 type locationAreaResponse struct {
 	Count    int     `json:"count"`
 	Next     string  `json:"next"`
@@ -27,23 +27,25 @@ type locationAreaResponse struct {
 
 // type locationAreaEncounters: used in commandExplore
 type locationAreaEncounters struct {
-	/*
-		EncounterMethodRates struct{} `json:"encounter_method_rates"` // NOTE I am functionally ignoring this data during unmarshalling
-		GameIndex            int      `json:"game_index"`
-		ID                   int      `json:"id"`
-		Location             struct{} `json:"location"` // NOTE I am functionally ignoring this data during unmarshalling.
-		Name                 string   `json:"name"`
-		Names                struct{} `json:"names"` // NOTE I am functionally ignoring this data during unmarshalling.
-	*/
 	Ignored           struct{} `json:"-"`
 	PokemonEncounters []struct {
 		Pokemon struct {
 			Name string `json:"name"`
 			URL  string `json:"url"`
 		} `json:"pokemon"`
+
 		Ignored struct{} `json:"-"` // NOTE I am functionally ignoring this data during unmarshalling.
 
 	} `json:"pokemon_encounters"`
+}
+
+// type pokemonResponse: used in commandCatch
+type pokemonResponse struct {
+	ID             int    `json:"id"`
+	Name           string `json:"name"`
+	BaseExperience int    `json:"base_experience"`
+
+	Ignored struct{} `json:"-"`
 }
 
 // generic function for GET request to API, unmarshalling
@@ -88,4 +90,8 @@ func GetEncounters(u string, c *pokecache.Cache) (locationAreaEncounters, error)
 
 func GetLocations(u string, c *pokecache.Cache) (locationAreaResponse, error) {
 	return GetAPIResource[locationAreaResponse](u, c)
+}
+
+func GetPokemon(u string, c *pokecache.Cache) (pokemonResponse, error) {
+	return GetAPIResource[pokemonResponse](u, c)
 }
