@@ -14,7 +14,8 @@ import (
 type cliCommand struct {
 	name        string
 	description string
-	callback    func() error
+	callback    func(argument ...string) error
+	argument    string // currently just the single string, but maybe a slice is better?
 }
 
 // define struct for REPL and associated function
@@ -36,16 +37,17 @@ func NewREPL(interval int) *REPL {
 }
 
 // add a command to the REPL, for use in the ReplCLI function to not have this huge definition at the start
-func (r *REPL) RegisterCommand(name string, description string, callback func() error) {
+func (r *REPL) RegisterCommand(name string, description string, callback func(argument ...string) error, argument string) {
 	r.commands[name] = cliCommand{
 		name:        name,
 		description: description,
 		callback:    callback,
+		argument:    argument,
 	}
 }
 
 // first command: 'exit' pokedex
-func (r *REPL) commandExit() error {
+func (r *REPL) commandExit(argument ...string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 
 	// any cleanup functions (that might produce errors) go here
@@ -55,24 +57,24 @@ func (r *REPL) commandExit() error {
 }
 
 // second command: print 'help'
-func (r *REPL) commandHelp() error {
+func (r *REPL) commandHelp(argument ...string) error {
 	// header fluff
 	fmt.Println("Welcome to the Pokedex!\nUsage:")
 
 	// sanity check
 	if len(r.commands) < 1 {
-		return fmt.Errorf("no commands are implemented")
+		return fmt.Errorf("no commands are implemented (other than this one)")
 	}
 
 	// loop over all commands
 	for _, command := range r.commands {
-		fmt.Printf(" %s: %s\n", command.name, command.description)
+		fmt.Printf(" %s: %s.\n  Arguments: %s\n", command.name, command.description, command.argument)
 	}
 	return nil
 }
 
 // third command: print area names on the 'map'
-func (r *REPL) commandMap() error {
+func (r *REPL) commandMap(argument ...string) error {
 
 	// construct URL
 	var u string
@@ -102,7 +104,7 @@ func (r *REPL) commandMap() error {
 	return nil
 }
 
-func (r *REPL) commandMapb() error {
+func (r *REPL) commandMapb(argument ...string) error {
 	// construct URL and sanity check
 	if r.previousURL == "" || r.nextURL == "https://pokeapi.co/api/v2/location-area/?offset=20&limit=20" {
 		fmt.Println("You're on the first page of location results")
@@ -128,13 +130,43 @@ func (r *REPL) commandMapb() error {
 	return nil
 }
 
+func (r *REPL) commandExplore(argument ...string) error {
+	// sanity check
+	if len(argument) == 0 {
+		return fmt.Errorf("no arguments passed")
+	}
+
+	// just take the first argument
+	a := argument[0]
+
+	// print opening message
+	fmt.Printf("Exploring %s...\n", a)
+
+	// construct url
+	url := "https://pokeapi.co/api/v2/location-area/" + a
+
+	// get data via pokeapi package
+	encounters, err := pokeapi.GetEncounters(url, r.cache)
+	if err != nil {
+		return fmt.Errorf("error getting encounters from PokeAPI: %w", err)
+	}
+
+	// print pokemon
+	for _, e := range encounters.PokemonEncounters {
+		fmt.Printf("- %s\n", e.Pokemon.Name)
+	}
+
+	return nil
+}
+
 // main function: open a CLI that loops until interrupt or commandExit() is called
-func (r *REPL) ReplCLI() error {
+func (r *REPL) ReplCLI() {
 	// register commands here
-	r.RegisterCommand("exit", "Exit the Pokedex", r.commandExit)
-	r.RegisterCommand("help", "Prints this help message", r.commandHelp)
-	r.RegisterCommand("map", "View map locations", r.commandMap)
-	r.RegisterCommand("mapb", "View previous map locations", r.commandMapb)
+	r.RegisterCommand("exit", "Exit the Pokedex", r.commandExit, "none")
+	r.RegisterCommand("help", "Prints this help message", r.commandHelp, "none")
+	r.RegisterCommand("map", "View map locations", r.commandMap, "none")
+	r.RegisterCommand("mapb", "View previous map locations", r.commandMapb, "none")
+	r.RegisterCommand("explore", "View list of wild Pokemon on a given map location", r.commandExplore, "<area-name>")
 
 	// initialize scanner
 	s := bufio.NewScanner(os.Stdin)
@@ -146,25 +178,28 @@ func (r *REPL) ReplCLI() error {
 		s.Scan()
 		input := s.Text()
 		if ok := len(input) > 0; !ok {
-			//fmt.Println("Please enter a command")
 			continue
 		}
 		cleanedInput := stringutils.CleanInput(input)
-		firstInput := cleanedInput[0]
+		commandInput := cleanedInput[0]
+		var argumentInput []string // we'll use this if more than 1 word is input
 
-		//check if command in r.commands
-		command, ok := r.commands[firstInput]
+		// check if an argument was passed
+		if len(cleanedInput) != 1 { // this means there were at least two words in the input, i.e. an argument was passed
+			argumentInput = cleanedInput[1:]
+		}
+
+		//check if command exists (i.e. is present in slice r.commands)
+		command, ok := r.commands[commandInput]
 		if !ok {
-			fmt.Printf("Unknown command: %s\n", firstInput)
+			fmt.Printf("Unknown command: %s\n", commandInput)
 			continue
 		}
 
-		// try command, raise error if an issue arises
-		if err := command.callback(); err != nil {
+		// try executing the callback corresponding to the command input, raise error if an issue arises
+		if err := command.callback(argumentInput...); err != nil {
 			fmt.Printf("Error executing command: %v\n", err)
 			continue
 		}
-
-		fmt.Printf("Your command was: %s\n", firstInput)
 	}
 }

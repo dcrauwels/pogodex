@@ -5,7 +5,7 @@ import (
 )
 
 func CleanInput(text string) []string {
-	lc := strings.ToLower(text)
-	trLc := strings.TrimSpace(lc)
-	return strings.Fields(trLc)
+	lc := strings.ToLower(text)   //lowercase
+	trLc := strings.TrimSpace(lc) //trim spaces
+	return strings.Fields(trLc)   //return as slice of strings (sep = whitespace)
 }
