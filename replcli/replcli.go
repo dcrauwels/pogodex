@@ -267,6 +267,22 @@ func (r *REPL) commandInspect(argument ...string) error {
 	return nil
 }
 
+// eighth command: list all caught pokemon
+func (r *REPL) commandPokedex(argument ...string) error {
+	// introductory print
+	fmt.Println("Your Pokedex:")
+	if len(r.pokemon) == 0 {
+		return fmt.Errorf("no Pokemon have as yet been caught")
+	}
+
+	// iterate over r.pokemon
+	for name := range r.pokemon {
+		fmt.Printf(" - %s\n", name)
+	}
+
+	return nil
+}
+
 // main function: open a CLI that loops until interrupt or commandExit() is called
 func (r *REPL) ReplCLI() {
 	// register commands here
@@ -277,6 +293,7 @@ func (r *REPL) ReplCLI() {
 	r.RegisterCommand("explore", "View list of wild Pokemon on a given map location", r.commandExplore, "<area-name>")
 	r.RegisterCommand("catch", "Attempt to catch a Pokemon", r.commandCatch, "<pokemon-name>")
 	r.RegisterCommand("inspect", "View a caught Pokemon's details", r.commandInspect, "<pokemon-name>")
+	r.RegisterCommand("pokedex", "List all caught Pokemon", r.commandPokedex, "none")
 
 	// initialize scanner
 	s := bufio.NewScanner(os.Stdin)
